@@ -19,7 +19,7 @@ export const OpenAIStream = async (
   key: string,
   messages: Message[],
 ) => {
-  const url = 'http://backend:8001/questionnaires';
+  const url = 'http://db:8001/questionnaires';
 
   const res = await fetch(url, {
     method: 'GET',
