@@ -34,6 +34,12 @@ export const OpenAIStream = async (
 
   const stream = new ReadableStream({
     async start(controller) {
+      if (res.body === null) {
+        // Handle the case when res.body is null
+        controller.close();
+        return;
+      }
+
       const reader = res.body.getReader();
 
       while (true) {
