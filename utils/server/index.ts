@@ -1,5 +1,6 @@
 import { Message } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
+const fetch = require('node-fetch');
 
 import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION } from '../app/const';
 
@@ -24,7 +25,7 @@ export const OpenAIStream = async (
   const res = await fetch(url, {
     method: 'GET',
     headers: {
-      'accept': 'application/json',
+      'Accept': 'application/json',
     },
   });
 
