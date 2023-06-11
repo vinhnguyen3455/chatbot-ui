@@ -30,14 +30,36 @@ export const OpenAIStream = async (
   key: string,
   messages: Message[],
 ) => {
-  let url = `http://backend:8000/aitherapist/completions`;
+  let url = `${OPENAI_API_HOST}/v1/chat/completions`;
+  if (OPENAI_API_TYPE === 'azure') {
+    url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
+  }
   const res = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
+      ...(OPENAI_API_TYPE === 'openai' && {
+        Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
+      }),
+      ...(OPENAI_API_TYPE === 'azure' && {
+        'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
+      }),
+      ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
+        'OpenAI-Organization': OPENAI_ORGANIZATION,
+      }),
     },
     method: 'POST',
     body: JSON.stringify({
-      messages: messages,
+      ...(OPENAI_API_TYPE === 'openai' && {model: model.id}),
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+        ...messages,
+      ],
+      max_tokens: 1000,
+      temperature: temperature,
+      stream: true,
     }),
   });
 
@@ -70,6 +92,10 @@ export const OpenAIStream = async (
 
           try {
             const json = JSON.parse(data);
+            if (json.choices[0].finish_reason != null) {
+              controller.close();
+              return;
+            }
             const text = json.choices[0].delta.content;
             const queue = encoder.encode(text);
             controller.enqueue(queue);
