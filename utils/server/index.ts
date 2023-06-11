@@ -40,9 +40,6 @@ export const OpenAIStream = async (
     }),
   });
 
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-
   if (res.status !== 200) {
     const result = await res.json();
     if (result.error) {
@@ -54,12 +51,13 @@ export const OpenAIStream = async (
       );
     } else {
       throw new Error(
-        `OpenAI API returned an error: ${
-          decoder.decode(result?.value) || result.statusText
-        }`,
+        `OpenAI API returned an error: ${res.statusText}`,
       );
     }
   }
+
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -72,7 +70,7 @@ export const OpenAIStream = async (
             if (json.choices[0].finish_reason != null) {
               controller.close();
               return;
-            }            
+            }
             const text = json.choices[0].delta.content;
             const queue = encoder.encode(text);
             controller.enqueue(queue);
@@ -84,8 +82,11 @@ export const OpenAIStream = async (
 
       const parser = createParser(onParse);
 
-      for await (const chunk of res.body as any) {
-        parser.feed(decoder.decode(chunk));
+      const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+      let chunk;
+      while (!(chunk = await reader.read()).done) {
+        const chunkText = decoder.decode(chunk.value);
+        parser.feed(chunkText);
       }
     },
   });
