@@ -19,13 +19,22 @@ export const OpenAIStream = async (
   key: string,
   messages: Message[],
 ) => {
-  const url = 'http://db:8001/questionnaires';
-
+  let url = `http://backend:8000/aitherapist/completions`;
   const res = await fetch(url, {
-    method: 'GET',
     headers: {
-      'Accept': 'application/json',
+      'Content-Type': 'application/json',
     },
+    method: 'POST',
+    body: JSON.stringify({
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+        ...messages,
+      ],
+      stream: true,
+    }),
   });
 
   if (!res.ok) {
