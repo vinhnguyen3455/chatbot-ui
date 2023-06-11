@@ -24,8 +24,6 @@ export class OpenAIError extends Error {
 }
 
 export const OpenAIStream = async (
-  systemPrompt: string,
-  key: string,
   messages: Message[],
 ) => {
   let url = 'http://backend:8000/aitherapist/completions'; // Updated URL
