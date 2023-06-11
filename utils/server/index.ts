@@ -30,6 +30,29 @@ export const OpenAIStream = async (
   key: string,
   messages: Message[],
 ) => {
+  const fetchSystemPrompt = async (messages: Message[]): Promise<string> => {
+    const url = 'http://backend:8000/aitherapist/system-prompt';
+  
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        messages,
+      }),
+    });
+  
+    if (!response.ok) {
+      throw new Error(`Failed to fetch system prompt: ${response.statusText}`);
+    }
+  
+    const data = await response.json();
+    return data.system_prompt;
+  };
+
+  const customizedSystemPrompt = await fetchSystemPrompt(messages);
   let url = `${OPENAI_API_HOST}/v1/chat/completions`;
   if (OPENAI_API_TYPE === 'azure') {
     url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
@@ -53,7 +76,7 @@ export const OpenAIStream = async (
       messages: [
         {
           role: 'system',
-          content: systemPrompt,
+          content: customizedSystemPrompt,
         },
         ...messages,
       ],
